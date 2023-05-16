@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 )
@@ -9,8 +10,6 @@ import (
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
-
-	// Uncomment this block to pass the first stage
 
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
@@ -31,14 +30,21 @@ func main() {
 		}
 	}(conn)
 
-	buf := make([]byte, 1024)
-	if _, err := conn.Read(buf); err != nil {
-		fmt.Println("Error reading client: ", err.Error())
-		os.Exit(1)
-	}
+	for {
+		buf := make([]byte, 1024)
+		_, err := conn.Read(buf)
+		if err == io.EOF {
+			break
+		}
 
-	_, err = conn.Write([]byte("+PONG\r\n"))
-	if err != nil {
-		fmt.Println("Error sending the answer: ", err.Error())
+		if err != nil {
+			fmt.Println("Error reading client: ", err.Error())
+			os.Exit(1)
+		}
+
+		_, err = conn.Write([]byte("+PONG\r\n"))
+		if err != nil {
+			fmt.Println("Error sending the answer: ", err.Error())
+		}
 	}
 }
